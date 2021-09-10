@@ -129,6 +129,9 @@ def _mypy_rule_impl(ctx, is_aspect = False):
         transitive_srcs_depsets = _extract_transitive_deps(base_rule.attr.deps)
         stub_files = _extract_stub_deps(base_rule.attr.deps)
         external_deps = _extract_external_deps(base_rule.attr.deps)
+        if not is_aspect:
+            for dep in base_rule.attr.deps:
+                direct_src_files.extend(_extract_srcs([dep[DefaultInfo]]))
 
     if hasattr(base_rule.attr, "imports"):
         mypypath_parts = _extract_imports(base_rule.attr.imports, ctx.label)
@@ -167,7 +170,7 @@ def _mypy_rule_impl(ctx, is_aspect = False):
         runfiles = runfiles.merge(dep[DefaultInfo].default_runfiles)
 
     if not is_aspect:
-        runfiles = runfiles.merge(ctx.attr._mypy_cli.default_runfiles)
+        runfiles = runfiles.merge(ctx.attr._mypy_cli.default_runfiles).merge(ctx.attr._sitepkg_runner.default_runfiles)
 
     src_root_paths = sets.to_list(
         sets.make([f.root.path for f in src_files]),
@@ -178,8 +181,9 @@ def _mypy_rule_impl(ctx, is_aspect = False):
         output = exe,
         substitutions = {
             "{MYPY_EXE}": ctx.executable._mypy_cli.path,
-            "{PY_EXE}": ctx.executable._sitepkg_runner.path,
             "{MYPY_ROOT}": ctx.executable._mypy_cli.root.path,
+            "{PY_EXE}": ctx.executable._sitepkg_runner.path,
+            "{PY_ROOT}": ctx.executable._sitepkg_runner.root.path,
             "{CACHE_MAP_TRIPLES}": " ".join(_sources_to_cache_map_triples(src_files, is_aspect)),
             "{PACKAGE_ROOTS}": " ".join([
                 "--package-root " + shell.quote(path or ".")
@@ -187,7 +191,7 @@ def _mypy_rule_impl(ctx, is_aspect = False):
             ]),
             "{SRCS}": " ".join([
                 shell.quote(f.path) if is_aspect else shell.quote(f.short_path)
-                for f in src_files
+                for f in direct_src_files
             ]),
             "{VERBOSE_OPT}": "--verbose" if DEBUG else "",
             "{VERBOSE_BASH}": "set -x" if DEBUG else "",
