@@ -18,6 +18,10 @@ main() {
   py_root="{PY_ROOT}/"
   mypy="{MYPY_EXE}"
   py="{PY_EXE}"
+  junit_flag=""
+  if [ ! -z "${XML_OUTPUT_FILE:-}" ]; then
+    junit_flag="--junit-xml=${XML_OUTPUT_FILE}"
+  fi
 
   # TODO(Jonathon): Consider UX improvements using https://mypy.readthedocs.io/en/stable/command_line.html#configuring-error-messages
 
@@ -33,7 +37,7 @@ main() {
   fi
 
   set +o errexit
-  output=$($mypy {VERBOSE_OPT} --bazel {PACKAGE_ROOTS} --config-file {MYPY_INI_PATH} --cache-map {CACHE_MAP_TRIPLES} --python-executable ${py} -- {SRCS} 2>&1)
+  output=$($mypy {VERBOSE_OPT} --bazel {PACKAGE_ROOTS} --config-file {MYPY_INI_PATH} --cache-map {CACHE_MAP_TRIPLES} --python-executable ${py} ${junit_flag} -- {SRCS} 2>&1)
   status=$?
   set -o errexit
 
