@@ -18,7 +18,8 @@ main() {
 
   # TODO(Jonathon): Consider UX improvements using https://mypy.readthedocs.io/en/stable/command_line.html#configuring-error-messages
 
-  export MYPYPATH="$(pwd):{MYPYPATH_PATH}"
+  export MYPYPATH="{MYPYPATH_PATH}"
+  export PYTHONPATH="$(pwd)"
 
   # Workspace rules run in a different location from aspect rules. Here we
   # normalize if the external source isn't found.
