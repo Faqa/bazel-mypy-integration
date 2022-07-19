@@ -108,6 +108,7 @@ def _mypy_rule_impl(ctx, is_aspect = False):
     mypypath_parts = []
     direct_src_files = []
     transitive_srcs_depsets = []
+    deps_runfiles = ctx.runfiles()
     stub_files = []
 
     if hasattr(base_rule.attr, "srcs"):
@@ -116,6 +117,9 @@ def _mypy_rule_impl(ctx, is_aspect = False):
     if hasattr(base_rule.attr, "deps"):
         transitive_srcs_depsets = _extract_transitive_deps(base_rule.attr.deps)
         stub_files = _extract_stub_deps(base_rule.attr.deps)
+        deps_runfiles = ctx.runfiles()
+        for dep in base_rule.attr.deps:
+            deps_runfiles = deps_runfiles.merge(dep[DefaultInfo].default_runfiles)
 
     if hasattr(base_rule.attr, "imports"):
         mypypath_parts = _extract_imports(base_rule.attr.imports, ctx.label)
@@ -150,6 +154,7 @@ def _mypy_rule_impl(ctx, is_aspect = False):
     # the project version of mypy however, other rules should fall back on their
     # relative runfiles.
     runfiles = ctx.runfiles(files = src_files + stub_files + [mypy_config_file])
+    runfiles = runfiles.merge(deps_runfiles)
     if not is_aspect:
         runfiles = runfiles.merge(ctx.attr._mypy_cli.default_runfiles)
 
